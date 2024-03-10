@@ -1,0 +1,8 @@
+name: SteinerPortals
+main: io.github.alvinnorin.steinerportals.SteinerPortals
+version: 1.0
+author: Alvin Norin
+depend: [SteinerHomes]
+commands:
+  setportal:
+    description: Set a portal

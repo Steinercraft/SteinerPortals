@@ -1,0 +1,3 @@
+locations:
+collection: 100
+lag-threshold: 15
