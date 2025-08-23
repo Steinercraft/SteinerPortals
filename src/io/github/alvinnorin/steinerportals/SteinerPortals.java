@@ -1,31 +1,18 @@
 package io.github.alvinnorin.steinerportals;
 
-import java.awt.Color;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.EntityType;
@@ -33,18 +20,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.inventory.meta.BookMeta;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import io.github.alvinnorin.steinerhomes.Home;
@@ -55,13 +35,10 @@ import net.md_5.bungee.api.chat.TextComponent;
 public class SteinerPortals extends JavaPlugin implements Listener {
 	
 	public static JavaPlugin plugin = null;
-	
-	public List<Player> QUEUE = new ArrayList();
+
 	public UUID LOCATION = null;
 	public HashMap<UUID, Location> LOCATIONS = new HashMap<UUID, Location>();
-	public List<UUID> USED_LOCATIONS = new ArrayList<UUID>();
 	public Boolean calculatingLocation = false;
-	public Boolean reloadLocation = true;
 	public Long COOLDOWN = (long) 0;
 	public HashMap<Player, Long> FUSE = new HashMap();
 	public int COLLECTION = 0;
@@ -70,13 +47,8 @@ public class SteinerPortals extends JavaPlugin implements Listener {
 	public List<Player> ENTERED = new ArrayList<Player>();
 	
 	private List<Home> HOMES = io.github.alvinnorin.steinerhomes.API.getHomes();
-	private HashMap<Location, String> serializedLocations = new HashMap<Location, String>();
 	
 	private List<Location> BLACKLISTED_REGIONS = new ArrayList<Location>();
-	
-    public SteinerPortals() {
-
-    }
     
     @EventHandler (priority = EventPriority.HIGHEST)
     public void onPlayerMoveEvent(PlayerMoveEvent event) {
@@ -108,10 +80,6 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     			randomTeleport(event.getPlayer());
     		}
     	}
-
-		//TODO: Clean
-    	/* if (event.getPlayer().getLocation().getY() < 0)
-    		event.getPlayer().teleport(event.getPlayer().getLocation().getWorld().getHighestBlockAt(event.getPlayer().getLocation()).getLocation().add(0, 1, 0)); */
     }
     
     private void blackListSurroundings(int distance, int extension) {
@@ -155,7 +123,6 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     	return spots;
     }
     
-    
     private void blackListSpot(Location location) {
     	String region = serializeLocation(getRegion(location));
     	String spot = serializeLocation(location);
@@ -183,13 +150,7 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     
     public void setLocation(UUID location) {
     	ENTERED.clear();
-    	//if (LOCATIONS.size() > 1) {
-    		//if (!USED_LOCATIONS.isEmpty())
-    		//LOCATIONS.remove(USED_LOCATIONS.get(0));
-    		//if (LOCATIONS.size() > 1)
-    			LOCATIONS.remove(LOCATION);
-    	//}// else
-    		//USED_LOCATIONS.add(LOCATION);
+        LOCATIONS.remove(LOCATION);
 		LOCATION = location;
     }
     
@@ -280,7 +241,7 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     	
     	blackListHomes();
     	
-    	//Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN+"Blackspotting surroundings");
+    	//  Staining surroundings
     	blackListSurroundings(5, 2);
     	
     	int x, z;
@@ -302,15 +263,12 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     private void blackListHomes() {
     	List<Home> homes_unfiltered = io.github.alvinnorin.steinerhomes.API.getHomes();
     	List<Home> homes = new ArrayList<Home>();
-    	
-    	//Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN+"Filtering out homes with non-existing worlds ..");
+
+    	//  Filtering out homes with non-existing worlds
     	for (Home home : homes_unfiltered)
     		for (World world : Bukkit.getWorlds())
     			if (world.getUID().equals(home.getWorldUUID()))
     				homes.add(home);
-    	
-    	//for (Home home : homes)
-    	//	serializedLocations.put(home.getLocation(), serializeLocation(home.getLocation()));
     	
     	if ((!getConfig().contains("blacklisted")) || ((!HOMES.isEmpty()) && HOMES.size() != homes.size())) {
     		Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN+"Blacklisting random teleportation regions");
@@ -325,8 +283,8 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     	blackListSpot(home.getLocation());
     	List<Home> homes_unfiltered = io.github.alvinnorin.steinerhomes.API.getHomes();
     	List<Home> homes = new ArrayList<Home>();
-    	    	
-    	//Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN+"Filtering out homes with non-existing worlds ..");
+
+    	//  Filtering out homes with non-existing worlds
     	for (Home instance : homes_unfiltered)
     		for (World world : Bukkit.getWorlds())
     			if (world.getUID().equals(instance.getWorldUUID()))
@@ -334,44 +292,7 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     	HOMES = homes;
     	saveLocations();
     }
-    
-    /*public void calculateLocation() {
-    	calculatingLocation = true;
-    	World world = getServer().getWorld("world");
-    	Location spawn = world.getSpawnLocation();
-    	int distance = 100000;
-    	int iteration = 0;
-    	search:while (true) {
-	    	int x = ThreadLocalRandom.current().nextInt(spawn.getBlockX() - distance, spawn.getBlockX() + distance);
-	    	int z = ThreadLocalRandom.current().nextInt(spawn.getBlockZ() - distance, spawn.getBlockZ() + distance);
-	    	boolean clear = true;
-	    	blackspot:for (Home home : io.github.alvinnorin.steinerhomes.API.getHomes()) {
-	    		int safeDistance = 10000 + getNumberOfHomesNearby(world.getHighestBlockAt(x, z).getLocation()) * 1000;
-	    		try {
-			    	if (home.getLocation().getWorld().getUID() == world.getUID() && home.getLocation().distance(world.getHighestBlockAt(x, z).getLocation()) < safeDistance) {
-			    		clear = false;
-			    		break blackspot;
-			    	}
-	    		} catch (NullPointerException e) {}
-	    		try {
-	    			Thread.sleep(20);
-	    		} catch (InterruptedException e) {
-	    			e.printStackTrace();
-	    		} 
-	    	} try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} if (clear && (world.getBlockAt(world.getHighestBlockAt(x, z).getLocation().subtract(0, 1, 0)).getBlockData().getMaterial().isSolid())) {
-	    		addLocation(world.getHighestBlockAt(x, z).getLocation().add(0, 3, 0));
-	    		calculatingLocation = false;
-	    		break search;
-	    	} distance += 10000;
-	    	//System.out.println("Iteration: "+iteration+" distance: "+distance+" clear: "+clear+" material: "+world.getBlockAt(world.getHighestBlockAt(x, z).getLocation().subtract(0, 1, 0)).getBlockData().getMaterial().isSolid());
-	    	iteration ++;
-    	}
-    }*/
-    
+
     public int getNumberOfHomesNearby(Location location) {
     	int number = 0;
     	for (Home home : io.github.alvinnorin.steinerhomes.API.getHomes()) {
@@ -461,11 +382,9 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     			
     			if(currentSec == sec) {
     				// this code block triggers each tick
-    				
     				ticks++;
     			} else {
     				// this code block triggers each second
-    				
     				currentSec = sec;
     				TPS = (TPS == 0 ? ticks : ((TPS + ticks) / 2));
     				ticks = 0;
@@ -476,32 +395,6 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     			}
     		}
     	}, 0, 1);
-        /*Bukkit.getServer().getScheduler().runTaskTimerAsynchronously(plugin, new Runnable(){
-            @Override
-            public void run() {
-            	if (reloadLocation && !calculatingLocation) {
-            		calculateLocation();
-            		reloadLocation = false;
-            	} if (!QUEUE.isEmpty() && LOCATION != null) {
-            		Bukkit.getServer().getScheduler().runTask(plugin, new Runnable(){
-                        @Override
-                        public void run() {
-                        	try {
-                        		for (Player next : QUEUE)
-                        			next.teleport(LOCATION);
-                        		QUEUE.clear();
-                        		reloadLocation = true;
-                        	} catch (java.lang.IndexOutOfBoundsException e) {}
-                        }
-            		});
-                }
-            	
-            	for (Map.Entry<Player, Long> entry : COOLDOWN.entrySet())
-            		if (entry.getValue() + 1000 * 60 <= System.currentTimeMillis())
-            			COOLDOWN.remove(entry.getKey());
-            	
-            }
-        }, 0, 20L);*/
     }
 	
 	protected static String serializeLocation(Location location) {
@@ -552,13 +445,6 @@ public class SteinerPortals extends JavaPlugin implements Listener {
 		} else if (rpGetPlayerDirection(player).equals("east") || rpGetPlayerDirection(player).equals("west")) {
 			//	Width is along Z
 			//	from is the lower number. to is the higher.
-			/*for (int i = 1; i < 10; i ++)
-				if (!player.getLocation().getWorld().getBlockAt(
-						player.getLocation().getBlockX(), player.getLocation().getBlockY(), player.getLocation().getBlockZ() - i).isEmpty())*/
-					
-			/*for (int i = 1; i < 10; i ++)
-				if (!player.getLocation().getWorld().getBlockAt(
-						player.getLocation().getBlockX(), player.getLocation().getBlockY(), player.getLocation().getBlockZ() + i).isEmpty())*/
 			from = player.getLocation().getBlockZ() - 1;
 			to = player.getLocation().getBlockZ() + 1;
 			getConfig().set("x"+player.getLocation().getBlockX()+".from", from);
@@ -576,8 +462,7 @@ public class SteinerPortals extends JavaPlugin implements Listener {
 				setRandomPortal(player);
 			} else
 				player.sendMessage(ChatColor.RED+"Only operators may use this command");
-			
-		
+
 		return false;
 	}
 	
