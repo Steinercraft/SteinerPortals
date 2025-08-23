@@ -65,7 +65,6 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     	    				getConfig().getInt("x"+event.getPlayer().getLocation().getBlockX()+".y") + 1)) {
     			randomTeleport(event.getPlayer());
     		}
-    				
     	} else if (getConfig().contains("z"+event.getPlayer().getLocation().getBlockZ())) {
     		if (event.getPlayer().getLocation().getBlockX() >=
     				getConfig().getInt("z"+event.getPlayer().getLocation().getBlockZ()+".from")
