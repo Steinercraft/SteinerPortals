@@ -28,7 +28,6 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import io.github.alvinnorin.steinerhomes.Home;
-import io.github.alvinnorin.steineroptimizer.SteinerOptimizer;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 
@@ -47,8 +46,6 @@ public class SteinerPortals extends JavaPlugin implements Listener {
 	public List<Player> ENTERED = new ArrayList<Player>();
 	
 	private List<Home> HOMES = io.github.alvinnorin.steinerhomes.API.getHomes();
-	
-	private List<Location> BLACKLISTED_REGIONS = new ArrayList<Location>();
     
     @EventHandler (priority = EventPriority.HIGHEST)
     public void onPlayerMoveEvent(PlayerMoveEvent event) {
@@ -79,24 +76,6 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     			randomTeleport(event.getPlayer());
     		}
     	}
-    }
-    
-    private void blackListSurroundings(int distance, int extension) {
-    	BLACKLISTED_REGIONS.clear();
-    	List<Location> blacklisted = new ArrayList<Location>();
-    	int d = distance;
-    	for (Location region : blacklisted) {
-    		if (getSpotsInRegion(region).size() >= 1)
-    		d = distance + ((getSpotsInRegion(region).size() - 1) * extension);
-    		for (int x = region.getBlockX() - d; x <= region.getBlockX() + d; x ++)
-    			for (int z = region.getBlockZ() - d; z <= region.getBlockZ() + d; z ++)
-    				if (!BLACKLISTED_REGIONS.contains(new Location(region.getWorld(), x, 0, z)))
-    					BLACKLISTED_REGIONS.add(new Location(region.getWorld(), x, 0, z));
-    	}
-    }
-    
-    private List<Location> getBlackListedSurroundings() {
-    	return BLACKLISTED_REGIONS;
     }
     
     private static Location getRegion(Location location) {
@@ -165,10 +144,12 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     		UUID uuid = null;
     		while (true) {
 	    		uuid = (UUID) LOCATIONS.keySet().toArray()[ThreadLocalRandom.current().nextInt(0, LOCATIONS.size())];
-	    		if (isRegionBlackListed(getRegion(LOCATIONS.get(uuid))))
+                ProtectedLocation protectedLocation = new ProtectedLocation(LOCATIONS.get(uuid));
+	    		if (getProtectedLocations().isLocationProtected(protectedLocation))
 	    			LOCATIONS.remove(uuid);
 	    		else
 	    			return uuid;
+                Thread.sleep(50);
     		}
     	} catch (Exception e) {
     		return (UUID) LOCATIONS.keySet().toArray()[0];
@@ -234,62 +215,35 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     	World world = getServer().getWorld("world");
     	Location spawn = world.getSpawnLocation();
     	int distance = 100000;
-    	int iteration = 0;
-    	
-    	List<Home> homes = io.github.alvinnorin.steinerhomes.API.getHomes();
-    	
-    	blackListHomes();
-    	
-    	//  Staining surroundings
-    	blackListSurroundings(5, 2);
     	
     	int x, z;
     	
-    	search:while (true) {
+    	while (true) {
     		x = ThreadLocalRandom.current().nextInt(spawn.getBlockX() - distance, spawn.getBlockX() + distance);
     		z = ThreadLocalRandom.current().nextInt(spawn.getBlockZ() - distance, spawn.getBlockZ() + distance);
     		Location location = new Location(world, x, 0, z);
-    		if (!getBlackListedSurroundings().contains(getRegion(location)))
+            ProtectedLocation protectedLocation = new ProtectedLocation(location);
+    		if (!getProtectedLocations().isLocationProtected(protectedLocation))
     			if ((world.getBlockAt(world.getHighestBlockAt(x, z).getLocation().subtract(0, 1, 0)).getBlockData().getMaterial().isSolid())) {
     	    		addLocation(world.getHighestBlockAt(x, z).getLocation().add(0, 3, 0));
     	    		calculatingLocation = false;
-    	    		break search;
+    	    		break;
     			}
     		distance += 10000;
     	}
     }
     
-    private void blackListHomes() {
-    	List<Home> homes_unfiltered = io.github.alvinnorin.steinerhomes.API.getHomes();
-    	List<Home> homes = new ArrayList<Home>();
-
-    	//  Filtering out homes with non-existing worlds
-    	for (Home home : homes_unfiltered)
-    		for (World world : Bukkit.getWorlds())
-    			if (world.getUID().equals(home.getWorldUUID()))
-    				homes.add(home);
-    	
-    	if ((!getConfig().contains("blacklisted")) || ((!HOMES.isEmpty()) && HOMES.size() != homes.size())) {
-    		Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN+"Blacklisting random teleportation regions");
-    		for (Home home : homes) {
-    			blackListSpot(home.getLocation());
-    		} HOMES = homes;
-    	} saveLocations();
-    }
-    
     public void blackListHome(Home home) {
-    	Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN+"Blacklisting region for new home location");
-    	blackListSpot(home.getLocation());
-    	List<Home> homes_unfiltered = io.github.alvinnorin.steinerhomes.API.getHomes();
-    	List<Home> homes = new ArrayList<Home>();
+    	// Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN+"Blacklisting region for new home location");
+    	// TODO: Implement for an optimized version
+    }
 
-    	//  Filtering out homes with non-existing worlds
-    	for (Home instance : homes_unfiltered)
-    		for (World world : Bukkit.getWorlds())
-    			if (world.getUID().equals(instance.getWorldUUID()))
-    				homes.add(instance);
-    	HOMES = homes;
-    	saveLocations();
+    public ProtectedLocationSet getProtectedLocations() {
+        ProtectedLocationSet set = new ProtectedLocationSet();
+        for (Home home : io.github.alvinnorin.steinerhomes.API.getHomes()) {
+            Location location = home.getLocation();
+            set.add(new ProtectedLocation(home.getWorldUUID(), location.getBlockX(), location.getBlockZ(), home.getOwner()));
+        } return set;
     }
 
     public int getNumberOfHomesNearby(Location location) {
@@ -355,18 +309,18 @@ public class SteinerPortals extends JavaPlugin implements Listener {
             	while (true) {
 	            	while (LOCATIONS.size() < COLLECTION) {
 	            		//if (TPS >= 19) {
-	            		if (SteinerOptimizer.TPS_MINUTE >= plugin.getConfig().getInt("lag-threshold", 15) && LOCATIONS.size() != 0) {
+	            		if (Bukkit.getServerTickManager().getTickRate() >= plugin.getConfig().getInt("lag-threshold", 15) && !LOCATIONS.isEmpty()) {
 	            			Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN+"Looking for a new random teleportation location ..");
 		            		long time = System.currentTimeMillis();
 		            		calculateLocation();
 		            		Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN+"Found new random teleportation location! Took "+(System.currentTimeMillis() - time)+" milliseconds");
 	            		} else
-	            			Bukkit.getConsoleSender().sendMessage(ChatColor.RED+"The TPS is too low to generate new locations as of now ("+SteinerOptimizer.TPS_MINUTE+" < "+plugin.getConfig().getInt("lag-threshold", 15)+")");
+	            			Bukkit.getConsoleSender().sendMessage(ChatColor.RED+"The TPS is too low to generate new locations as of now ("+Bukkit.getServerTickManager().getTickRate()+" < "+plugin.getConfig().getInt("lag-threshold", 15)+")");
 	            		Bukkit.getConsoleSender().sendMessage(ChatColor.GREEN+""+LOCATIONS.size()+" locations generated");
 	            		//}
 	            	} try {
             			Thread.sleep(50);
-            		} catch (Exception e) {}
+            		} catch (Exception ignored) {}
             	}
             }
         }); getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
