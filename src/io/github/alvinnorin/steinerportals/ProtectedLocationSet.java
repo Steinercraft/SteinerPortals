@@ -26,7 +26,8 @@ public class ProtectedLocationSet extends HashSet<ProtectedLocation> {
         boolean returnValue = super.remove(location);
         // Update neighbourhood relationships
         if (returnValue)
-            if (location instanceof ProtectedLocation protectedLocation) {
+            if (location instanceof ProtectedLocation) {
+                ProtectedLocation protectedLocation = (ProtectedLocation) location;
                 for (ProtectedLocation existingLocation : this)
                     existingLocation.getNeighbours().remove(location);
                 protectedLocation.getNeighbours().clear();

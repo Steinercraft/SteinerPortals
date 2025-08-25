@@ -128,7 +128,8 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     
     public void setLocation(UUID location) {
     	ENTERED.clear();
-        LOCATIONS.remove(LOCATION);
+        if (LOCATIONS.size() > 1)
+            LOCATIONS.remove(LOCATION);
 		LOCATION = location;
     }
     
@@ -241,6 +242,8 @@ public class SteinerPortals extends JavaPlugin implements Listener {
     public ProtectedLocationSet getProtectedLocations() {
         ProtectedLocationSet set = new ProtectedLocationSet();
         for (Home home : io.github.alvinnorin.steinerhomes.API.getHomes()) {
+            if (home.getWorldUUID() == null)
+                continue;
             Location location = home.getLocation();
             set.add(new ProtectedLocation(home.getWorldUUID(), location.getBlockX(), location.getBlockZ(), home.getOwner()));
         } return set;

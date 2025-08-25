@@ -25,14 +25,18 @@ public class ProtectedLocation {
     @Getter
     private final HashSet<ProtectedLocation> neighbours = new HashSet<>();
 
-    public ProtectedLocation(UUID world, int x, int y, UUID owner) {
+    public ProtectedLocation(UUID world, int x, int y, UUID owner) throws NullPointerException {
+        if (world == null)
+            throw new NullPointerException("World cannot be null");
         this.world = world;
         this.x = x;
         this.z = y;
         this.owner = owner;
     }
 
-    public ProtectedLocation(Location location) {
+    public ProtectedLocation(Location location) throws NullPointerException {
+        if (location == null)
+            throw new NullPointerException("World cannot be null");
         this.world = Objects.requireNonNull(location.getWorld()).getUID();
         this.x = location.getBlockX();
         this.z = location.getBlockZ();
