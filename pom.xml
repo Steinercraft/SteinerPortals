@@ -9,8 +9,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.6.1</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>17</source>
+          <target>17</target>
         </configuration>
       </plugin>
     </plugins>
@@ -43,6 +43,12 @@
 	    <version>0.0.1-SNAPSHOT</version>
 	    <scope>system</scope>
     <systemPath>/home/alvin/.m2/repository/SteinerHomes/SteinerHomes/0.0.1-SNAPSHOT/SteinerHomes-0.0.1-SNAPSHOT.jar</systemPath>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.38</version>
     </dependency>
 </dependencies>
   <artifactId>SteinerPortals</artifactId>
